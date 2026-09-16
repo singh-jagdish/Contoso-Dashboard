@@ -1,0 +1,107 @@
+@page "/documents"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@attribute [Authorize]
+@inject DocumentService DocumentService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Documents - ContosoDashboard</PageTitle>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Documents</h1>
+            <p class="text-muted">Upload work files and find documents you can access.</p>
+        </div>
+        <label class="btn btn-primary" for="document-upload">
+            <i class="bi bi-upload"></i> Upload documents
+            <InputFile id="document-upload" OnChange="HandleSelectedFiles" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png" aria-label="Select documents to upload" hidden />
+        </label>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(statusMessage))
+    {
+        <div class="alert @(statusIsError ? "alert-danger" : "alert-info")" role="status" aria-live="polite">@statusMessage</div>
+    }
+
+    @if (uploading)
+    {
+        <div class="alert alert-secondary" role="status" aria-live="polite"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Uploading and queueing security scans...</div>
+    }
+
+    <div class="row mb-3">
+        <div class="col-md-5"><label class="visually-hidden" for="document-search">Search my documents</label><input id="document-search" class="form-control" placeholder="Search my documents" @bind="search" @bind:event="oninput" @onkeyup="Reload" /></div>
+        <div class="col-md-3"><label class="visually-hidden" for="document-category">Filter by category</label><select id="document-category" class="form-select" value="@category" @onchange="CategoryChanged"><option value="">All categories</option>@foreach (var item in DocumentCategories.All) { <option value="@item">@item</option> }</select></div>
+    </div>
+
+    @if (documents == null)
+    {
+        <p><em>Loading documents...</em></p>
+    }
+    else if (documents.Count == 0)
+    {
+        <div class="alert alert-light border">No clean documents found. Newly uploaded documents appear here after their security scan completes.</div>
+    }
+    else
+    {
+        <div class="table-responsive"><table class="table table-hover align-middle"><caption class="visually-hidden">Clean documents available to the current user</caption>
+            <thead><tr><th>Title</th><th>Category</th><th>Project</th><th>Size</th><th>Uploaded</th><th></th></tr></thead>
+            <tbody>@foreach (var document in documents)
+            {
+                <tr><td><strong>@document.Title</strong><br /><small class="text-muted">@document.OriginalFileName</small></td><td>@document.Category</td><td>@(document.Project?.Name ?? "Personal")</td><td>@FormatSize(document.FileSize)</td><td>@document.UploadedDate.ToLocalTime().ToString("MMM dd, yyyy")</td><td><a class="btn btn-sm btn-outline-primary" href="/documents/file/@document.DocumentId"><i class="bi bi-download"></i> Download</a>@if (document.FileType is "application/pdf" || document.FileType.StartsWith("image/")) { <a class="btn btn-sm btn-outline-secondary ms-1" target="_blank" href="/documents/file/@document.DocumentId?preview=true"><i class="bi bi-eye"></i></a> }</td></tr>
+            }</tbody>
+        </table></div>
+    }
+</div>
+
+@code {
+    private List<Document>? documents;
+    private string search = string.Empty;
+    private string category = string.Empty;
+    private int currentUserId;
+    private bool uploading;
+    private bool statusIsError;
+    private string? statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUserId = await GetCurrentUserIdAsync();
+        await LoadDocuments();
+    }
+
+    private async Task Reload(ChangeEventArgs _) => await LoadDocuments();
+    private async Task Reload(KeyboardEventArgs _) => await LoadDocuments();
+    private async Task CategoryChanged(ChangeEventArgs args) { category = args.Value?.ToString() ?? string.Empty; await LoadDocuments(); }
+    private async Task LoadDocuments() => documents = currentUserId == 0 ? new() : await DocumentService.GetUserDocumentsAsync(currentUserId, search, category);
+
+    private async Task HandleSelectedFiles(InputFileChangeEventArgs args)
+    {
+        uploading = true; statusMessage = null; statusIsError = false;
+        try
+        {
+            foreach (var file in args.GetMultipleFiles(20))
+            {
+                await using var stream = file.OpenReadStream(25 * 1024 * 1024);
+                var result = await DocumentService.UploadAsync(currentUserId, new DocumentUploadRequest(file.Name, null, "Other", file.Name, file.ContentType, file.Size), stream);
+                statusMessage = result.Success ? result.Message : result.Message;
+                statusIsError = !result.Success;
+            }
+            await LoadDocuments();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Upload failed: {ex.Message}"; statusIsError = true;
+        }
+        finally { uploading = false; }
+    }
+
+    private async Task<int> GetCurrentUserIdAsync()
+    {
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var claim = state.User.FindFirst(ClaimTypes.NameIdentifier);
+        return claim != null && int.TryParse(claim.Value, out var id) ? id : 0;
+    }
+
+    private static string FormatSize(long bytes) => bytes switch { < 1024 => $"{bytes} B", < 1024 * 1024 => $"{bytes / 1024d:0.0} KB", _ => $"{bytes / 1024d / 1024d:0.0} MB" };
+}

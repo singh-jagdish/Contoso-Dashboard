@@ -5,6 +5,7 @@
 @attribute [Authorize]
 @inject IDashboardService DashboardService
 @inject INotificationService NotificationService
+@inject DocumentService DocumentService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Dashboard - ContosoDashboard</PageTitle>
@@ -96,6 +97,14 @@
         </div>
 
         <div class="col-md-6">
+            <h3>Recent Documents</h3>
+            @if (recentDocuments != null && recentDocuments.Any())
+            {
+                <div class="list-group mb-4">@foreach (var document in recentDocuments) { <a class="list-group-item list-group-item-action" href="/documents/file/@document.DocumentId"><i class="bi bi-file-earmark me-2"></i>@document.Title</a> }</div>
+            }
+            else { <p class="text-muted">No recent documents</p> }
+        </div>
+        <div class="col-md-6">
             <h3>Recent Notifications</h3>
             @if (recentNotifications != null && recentNotifications.Any())
             {
@@ -124,6 +133,7 @@
     private DashboardSummary? summary;
     private List<Announcement>? announcements;
     private List<Notification>? recentNotifications;
+    private List<Document>? recentDocuments;
     private string userName = "User";
     private int currentUserId = 0;
 
@@ -146,6 +156,7 @@
             summary = await DashboardService.GetDashboardSummaryAsync(currentUserId);
             announcements = await DashboardService.GetActiveAnnouncementsAsync();
             recentNotifications = await NotificationService.GetUserNotificationsAsync(currentUserId);
+            recentDocuments = await DocumentService.GetRecentAsync(currentUserId);
         }
     }
 

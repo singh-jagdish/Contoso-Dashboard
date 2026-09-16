@@ -1,0 +1,14 @@
+@page "/documents/shared"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject DocumentService DocumentService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Shared With Me - ContosoDashboard</PageTitle>
+<h1>Shared With Me</h1>
+@if (documents == null) { <p role="status"><em>Loading...</em></p> } else if (documents.Count == 0) { <p class="text-muted">No documents have been shared with you.</p> } else { <div class="list-group" aria-label="Documents shared with me">@foreach (var document in documents) { <a class="list-group-item list-group-item-action" href="/documents/file/@document.DocumentId"><strong>@document.Title</strong><span class="ms-2 text-muted">@document.Category</span><span class="visually-hidden"> Download document</span></a> }</div> }
+@code {
+    private List<Document>? documents;
+    protected override async Task OnInitializedAsync() { var state = await AuthenticationStateProvider.GetAuthenticationStateAsync(); var claim = state.User.FindFirst(ClaimTypes.NameIdentifier); if (claim != null && int.TryParse(claim.Value, out var id)) documents = await DocumentService.GetSharedWithMeAsync(id); else documents = new(); }
+}

@@ -75,6 +75,7 @@ ContosoDashboard is built using ASP.NET Core 8.0 with Blazor Server and provides
 - **Notifications Center**: View and manage all notifications with read/unread status and priority badges
 - **User Profile**: Update personal information, availability status, and notification preferences
 - **Service-Level Security**: Authorization checks prevent IDOR vulnerabilities
+- **Document Management**: Authenticated users can upload supported files to private storage, browse clean documents, download/preview authorized files, and access shared documents
 - **Data Models**: Complete entity framework models for Users, Tasks, Projects, Notifications, and Announcements
 - **Business Services**: Service layer for all core functionality (Tasks, Projects, Users, Notifications, Dashboard)
 - **Database Context**: EF Core DbContext with relationships, indexes, and seed data
@@ -91,6 +92,10 @@ ContosoDashboard is built using ASP.NET Core 8.0 with Blazor Server and provides
 - **Security**: IDOR protection, service-level authorization, `[Authorize]` attributes
 
 ## Architecture Principles
+
+### Document Upload and Asynchronous Scanning
+
+Documents are stored under `ContosoDashboard/AppData/uploads`, outside `wwwroot`, using server-generated GUID paths. Uploads remain unavailable while `Pending` or `Scanning`; the offline training worker uses a bounded local queue and deterministic scanner. Production deployments can replace that boundary with Azure Queue Storage and an Azure Functions Queue Storage trigger plus an approved malware scanner. Failed scans never become downloadable.
 
 ### Offline-First with Cloud Migration Path
 

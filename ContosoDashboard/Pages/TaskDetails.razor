@@ -1,0 +1,13 @@
+@page "/tasks/{TaskId:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject ITaskService TaskService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Task Details - ContosoDashboard</PageTitle>
+@if (task == null) { <p><em>Loading...</em></p> } else { <h1>@task.Title</h1><p>@task.Description</p><div class="card"><div class="card-header">Related Documents</div><div class="card-body"><p class="text-muted">Documents uploaded from this task inherit its project access.</p><a class="btn btn-outline-primary" href="/documents">Open Documents</a></div></div> }
+@code {
+    [Parameter] public int TaskId { get; set; }
+    private TaskItem? task;
+    protected override async Task OnInitializedAsync() { var state = await AuthenticationStateProvider.GetAuthenticationStateAsync(); var claim = state.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier); if (claim != null && int.TryParse(claim.Value, out var id)) task = await TaskService.GetTaskByIdAsync(TaskId, id); }
+}

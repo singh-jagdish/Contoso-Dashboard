@@ -42,3 +42,15 @@ Open the HTTPS URL printed by the application and sign in using the existing see
 - Try path traversal and user-controlled filename values; confirm the storage path remains generated and private.
 - Confirm a failed upload cannot leave an accessible metadata record or orphaned private file.
 - Confirm administrator-only reports and activity data are not available to ordinary users.
+
+## Focused regression checklist
+
+Run these checks after each document-service change. They are the repository's current focused regression suite because the project does not yet contain an automated test project:
+
+- Upload a clean PDF as a seeded employee; verify a `Pending` or `Scanning` state is never downloadable, then verify the local worker changes it to `Clean` and the owner receives a notification.
+- Upload a filename containing `virus` or `eicar`; verify it becomes `Rejected`, has no protected download response, and does not appear in clean search results.
+- Request `/documents/file/{id}` as an unrelated authenticated user; verify a non-disclosing `404` and no download activity record.
+- Submit a rooted or traversal path to `LocalFileStorageService`; verify it throws and never writes outside `AppData/uploads`.
+- Deliver the same scan message twice; verify a terminal clean/rejected document is not processed twice.
+- Verify `/documents/admin` is available to an Administrator and denied to Employee, TeamLead, and ProjectManager roles.
+- Run `dotnet build .\ContosoDashboard\ContosoDashboard.csproj --no-restore` and record any failure before release.

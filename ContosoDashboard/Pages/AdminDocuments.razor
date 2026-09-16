@@ -1,0 +1,13 @@
+@page "/documents/admin"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrator")]
+@inject DocumentService DocumentService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Document Audit - ContosoDashboard</PageTitle>
+<h1>Document Audit</h1>
+@if (activities == null) { <p role="status"><em>Loading...</em></p> } else { <div class="table-responsive"><table class="table"><caption class="visually-hidden">Document activity audit events</caption><thead><tr><th scope="col">When</th><th scope="col">Action</th><th scope="col">Document</th><th scope="col">Actor</th><th scope="col">Details</th></tr></thead><tbody>@foreach (var activity in activities) { <tr><td>@activity.CreatedDate.ToLocalTime()</td><td>@activity.Action</td><td>@activity.Document.Title</td><td>@activity.ActorUser.DisplayName</td><td>@activity.Details</td></tr> }</tbody></table></div> }
+@code {
+    private List<DocumentActivity>? activities;
+    protected override async Task OnInitializedAsync() { var state = await AuthenticationStateProvider.GetAuthenticationStateAsync(); var claim = state.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier); activities = claim != null && int.TryParse(claim.Value, out var id) ? await DocumentService.GetActivityAsync(id) : new(); }
+}

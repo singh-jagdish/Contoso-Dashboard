@@ -5,6 +5,7 @@
 @using System.Security.Claims
 @attribute [Authorize]
 @inject IProjectService ProjectService
+@inject DocumentService DocumentService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -87,6 +88,11 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="mb-0">Project Documents</h5></div>
+                    <div class="card-body"><p class="text-muted">Project documents are available from the Documents area after security scanning.</p><a class="btn btn-outline-primary" href="/documents">Open Documents</a></div>
                 </div>
 
                 <div class="card">
