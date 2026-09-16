@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: User description: `--file StakeholderDocs/document-upload-and-management-feature.md`
 
+## Clarifications
+
+### Session 2026-09-16
+
+- Q: Which malware-scanning behavior should the offline training release use? → A: Use a pluggable scanner interface with a deterministic local training scanner; production scanning remains a deployment requirement.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Upload and Securely Organize Documents (Priority: P1)
@@ -112,7 +118,7 @@ An administrator can review document activity and generate reports that show doc
 - **FR-003**: The application MUST require a document title and category from the approved categories: Project Documents, Team Resources, Personal Files, Reports, Presentations, and Other.
 - **FR-004**: The application MUST allow an uploader to provide an optional description, project association, and custom tags.
 - **FR-005**: The application MUST record the upload date and time, uploader, file size, and file type for every successfully stored document.
-- **FR-006**: The application MUST scan each uploaded file for malware before making it available to users and MUST reject files that fail scanning.
+- **FR-006**: The application MUST scan each uploaded file through a replaceable malware-scanner boundary before making it available to users, MUST use a deterministic local scanner implementation for offline training, and MUST reject files that fail scanning.
 - **FR-007**: The application MUST provide upload progress and clear success or failure feedback, including the reason for validation failures.
 - **FR-008**: The application MUST store document content outside publicly served locations and MUST prevent user-controlled filenames from becoming storage paths.
 - **FR-009**: The application MUST give employees access to their own documents, project members access to documents for their projects, project managers authority over documents in their projects, and administrators access to all documents according to their role.
@@ -161,6 +167,7 @@ An administrator can review document activity and generate reports that show doc
 - Existing authentication and role assignments remain the source of user identity and permissions for the feature.
 - The approved document categories are fixed for the initial release and can be expanded through a reviewed requirements change.
 - Local filesystem storage and seeded local data are acceptable for the offline training release; production deployment will require separate malware scanning, identity, audit, retention, and storage review.
+- The offline training malware scanner is deterministic and local behind a replaceable boundary; production deployment must replace or supplement it with an approved malware-scanning service before release.
 - Permanent deletion means the document is removed from normal user access and local storage after confirmation; any future retention or legal hold policy must be defined before production deployment.
 - The initial release supports the file types listed in the requirements; file conversion for additional preview formats is out of scope.
 - The initial release is planned for delivery within 8 to 10 weeks, subject to approved scope and dependency availability.
