@@ -113,6 +113,29 @@ function Get-FeaturePathsEnv {
     }
 }
 
+function Resolve-TemplateContent {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$TemplateName,
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot
+    )
+
+    $templateFileName = "$TemplateName.md"
+    $candidatePaths = @(
+        (Join-Path $RepoRoot ".specify/templates/overrides/$templateFileName"),
+        (Join-Path $RepoRoot ".specify/templates/$templateFileName")
+    )
+
+    foreach ($candidatePath in $candidatePaths) {
+        if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
+            return Get-Content -LiteralPath $candidatePath -Raw
+        }
+    }
+
+    return $null
+}
+
 function Test-FileExists {
     param([string]$Path, [string]$Description)
     if (Test-Path -Path $Path -PathType Leaf) {
